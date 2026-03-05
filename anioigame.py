@@ -44,11 +44,25 @@ user_input = st.chat_input("输入你的行动...")
 
 if user_input:
     st.session_state.history.append({"role": "user", "parts": [{"text": user_input}]})
+    
     with st.spinner(f"DM 正在用 {selected_model} 生成..."):
-        response = client.models.generate_content(model=selected_model, contents=st.session_state.history)
+        response = client.models.generate_content(
+            model=selected_model,
+            contents=st.session_state.history,
+            # ================== 关键修复：强制关闭 NSFW 过滤 ==================
+            safety_settings=[
+                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
+                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
+            ]
+        )
         reply = response.text.strip()
+    
     st.session_state.history.append({"role": "model", "parts": [{"text": reply}]})
 
+    # 自动保存进度
+    with open("adventure_save.json", "w", encoding="utf-8") as f:  # 云端其实用不到，但保留兼容
+        json.dump(st.session_state.history, f, ensure_ascii=False, indent=4)
 # ================== 显示对话 ==================
 for msg in st.session_state.history:
     if msg["role"] == "user" and "SYSTEM_PROMPT" not in str(msg.get("parts", "")):
@@ -67,4 +81,5 @@ with col2:
     if uploaded:
         st.session_state.history = json.load(uploaded)
         st.success("进度已恢复！")
+
         st.rerun()
