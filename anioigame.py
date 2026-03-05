@@ -46,15 +46,9 @@ if user_input:
     st.session_state.history.append({"role": "user", "parts": [{"text": user_input}]})
     
     with st.spinner(f"DM 正在用 {selected_model} 生成..."):
-        # ================== 极简兼容版（解除 NSFW 限制） ==================
         response = client.models.generate_content(
             model=selected_model,
-            contents=st.session_state.history,
-            safety_settings=[
-                {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
-                {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_NONE"}
-            ]
+            contents=st.session_state.history
         )
         reply = response.text.strip()
     
@@ -79,5 +73,6 @@ with col2:
         st.success("进度已恢复！")
 
         st.rerun()
+
 
 
